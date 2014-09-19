@@ -1,0 +1,25 @@
+Bootable OS Image                               
++----------------------------------------------+
+|First 512 bytes (1 sector)                    |
+| * Loaded by BIOS at 0x7c00-0x7e00            |
+| * Real mode code, enters long mode directly  |
+| * Identity maps first 2 MiB in page tables   |
+|   at 0x9000                                  |
+| * Uses ATA CHS mode to load second 512 bytes |
+|   after long mode is entered                 |
+| * Terminated with 0x55AA signature           |
++----------------------------------------------+
+|Second 512 bytes                              |
+| * C ELF loader                               |
+| * Uses ATA primary disk, loads starting at   |
+|   third sector, inerprets as ELF file        |
++----------------------------------------------+
+|                                              |
+|                                              |
+|                                              |
+|           Rust code 64-bit ELF file          |
+|                   ...                        |
+|                                              |
+|                                              |
+|                                              |
++----------------------------------------------+
