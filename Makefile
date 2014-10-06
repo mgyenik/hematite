@@ -42,10 +42,11 @@ libcore.rlib: rust
 %.ll: %.rs
 	$(RUSTC) $(RUSTFLAGS) --crate-type=lib --emit=ir -o $@ $<
 	sed -i 's/ dereferenceable([0-9]\+)//g' $@
+	sed -i 's/ readonly//g' $@
 	sed -i 's/\(CONT_MASK.* = \)available_externally/\1internal/g' $@
 
 %.s: %.ll
-	llc $(LLCFLAGS) -o $@ $<
+	llc-3.4 $(LLCFLAGS) -o $@ $<
 
 $(TARGET).elf: link.ld $(OBJS)
 	 $(LD) -n -o $@ -T $^
