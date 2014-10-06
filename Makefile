@@ -1,11 +1,13 @@
 BOOTIMG = boot/boot
 LIBMORESTACK = /home/m/bin/lib/rustc/x86_64-unknown-linux-gnu/lib/
 LIBRUST = /home/m/bin/lib/rustc/x86_64-unknown-linux-gnu/lib/
-RUSTC = rustc -Z no-landing-pads --target x86_64-unknown-linux-gnu #-L $(LIBMORESTACK) -L $(LIBRUST)
+RUSTC = rustc
 TARGET = test
 RSRC = test.rs
 OBJS = $(RSRC:.rs=.o)
-QEMU = /home/m/git/qemu/x86_64-softmmu/qemu-system-x86_64
+QEMU = qemu-system-x86_64
+
+RUSTFLAGS := -A dead-code
 
 .PHONY: clean
 
@@ -33,12 +35,19 @@ libcore.rlib: rust
 %.o: %.S
 	gcc -c -o $@ $<
 
-%.o: %.rs
-	$(RUSTC) --crate-type=lib --emit=obj -o $@ $<
-	#$(RUSTC) -o $@ $<
+%.o: %.s
+	gcc -c -o $@ $<
+
+%.ll: %.rs
+	$(RUSTC) $(RUSTFLAGS) --crate-type=lib --emit=ir -o $@ $<
+	sed -i 's/ dereferenceable([0-9]\+)//g' $@
+	sed -i 's/\(CONT_MASK.* = \)available_externally/\1internal/g' $@
+
+%.s: %.ll
+	llc -o $@ $<
 
 $(TARGET).elf: link.ld $(OBJS)
-	 $(LD) -n -o $@ -T $^ "-(" libcore.rlib "-)"
+	 $(LD) -n -o $@ -T $^
 
 bootup: $(BOOTIMG)
 	$(QEMU) -d int,cpu_reset -monitor stdio -hda hda.img
@@ -54,4 +63,6 @@ clean:
 	rm -rf *.elf
 	rm -rf *.o
 	rm -rf *.bin
+	rm -rf *.s
+	rm -rf *.ll
 	make -C boot clean
