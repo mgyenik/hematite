@@ -1,4 +1,4 @@
-BOOTIMG = boot/boot
+BOOTIMG = boot/boot.bin
 LIBMORESTACK = /home/m/bin/lib/rustc/x86_64-unknown-linux-gnu/lib/
 LIBRUST = /home/m/bin/lib/rustc/x86_64-unknown-linux-gnu/lib/
 RUSTC = rustc
@@ -23,9 +23,9 @@ $(BOOTIMG): force
 	make -C boot
 
 hda.img: $(BOOTIMG) $(TARGET).elf
-	dd if=/dev/zero of=padding bs=1 count=$$((1024 - $$(stat -c%s boot/boot)))
-	cat $(BOOTIMG) padding > bootsects
-	cat bootsects $(TARGET).elf > $@
+	dd if=/dev/zero of=padding.bin bs=1 count=$$((1024 - $$(stat -c%s boot/boot.bin)))
+	cat $(BOOTIMG) padding.bin > bootsects.bin
+	cat bootsects.bin $(TARGET).elf > $@
 
 rust:
 	git submodule add https://github.com/mozilla/rust rust
