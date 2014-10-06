@@ -62,6 +62,13 @@ pub fn backspace() {
     }
 }
 
+pub fn silly_bss() {
+    unsafe {
+        curr_x = 0;
+        curr_y = 0;
+    }
+}
+
 pub fn putc(c: char) {
     unsafe {
         putchar(curr_x, curr_y, c);
