@@ -75,6 +75,15 @@ void printx(char *mem, int len, int line)
     }
 }
 
+void memset(void *p, uint8_t value, uint32_t size) {
+    uint8_t *end = (uint8_t *) ((uintptr_t) p + size);
+
+    while ( (uint8_t*) p < end ) {
+        *((uint8_t*)p) = value;
+        p++;
+    }
+}
+
 void
 bootmain(void)
 {
@@ -99,7 +108,9 @@ bootmain(void)
         if (ph->p_type == 1) { // PT_LOAD
             // p_pa is the load address of this segment (as well
             // as the physical address)
-            readseg(ph->p_pa, ph->p_memsz, ph->p_offset, i);
+            readseg(ph->p_pa, ph->p_filesz, ph->p_offset, i);
+            // Zero memory at end of load (.bss)
+            memset(ph->p_pa + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
         }
 
         i += 2;
