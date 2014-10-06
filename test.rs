@@ -82,15 +82,7 @@ pub fn write(s: &str) {
 #[no_mangle]
 pub fn start(_: int, _: *const *const u8) -> int {
     vga::clear_screen();
-    //write("Hello from rust!");
-    vga::putc('R');
-    vga::putc('U');
-    vga::putc('S');
-    vga::putc('T');
-    vga::putc('!');
-    vga::putc(' ');
-    vga::putc(':');
-    vga::putc('D');
+    write("Hello from rust!");
     loop {};
     return 0;
 }

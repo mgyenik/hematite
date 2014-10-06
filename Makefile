@@ -8,6 +8,7 @@ OBJS = $(RSRC:.rs=.o)
 QEMU = qemu-system-x86_64
 
 RUSTFLAGS := -A dead-code
+LLCFLAGS := -mattr=-fast-unaligned-mem,-vector-unaligned-mem
 
 .PHONY: clean
 
@@ -44,7 +45,7 @@ libcore.rlib: rust
 	sed -i 's/\(CONT_MASK.* = \)available_externally/\1internal/g' $@
 
 %.s: %.ll
-	llc -o $@ $<
+	llc $(LLCFLAGS) -o $@ $<
 
 $(TARGET).elf: link.ld $(OBJS)
 	 $(LD) -n -o $@ -T $^
