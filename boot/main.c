@@ -145,7 +145,7 @@ readseg(uint64_t pa, uint64_t count, uint64_t offset, int line)
 		// case once JOS enables the MMU.
 		readsect((uint8_t*) pa, disk_offset);
 		pa += SECTSIZE;
-		offset++;
+		disk_offset++;
 	}
 }
 
