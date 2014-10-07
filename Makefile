@@ -1,11 +1,14 @@
-BOOTIMG = boot/boot
+BOOTIMG = boot/boot.bin
 LIBMORESTACK = /home/m/bin/lib/rustc/x86_64-unknown-linux-gnu/lib/
 LIBRUST = /home/m/bin/lib/rustc/x86_64-unknown-linux-gnu/lib/
-RUSTC = rustc -Z no-landing-pads --target x86_64-unknown-linux-gnu #-L $(LIBMORESTACK) -L $(LIBRUST)
+RUSTC = rustc
 TARGET = test
 RSRC = test.rs
 OBJS = $(RSRC:.rs=.o)
-QEMU = /home/m/git/qemu/x86_64-softmmu/qemu-system-x86_64
+QEMU = qemu-system-x86_64
+
+RUSTFLAGS := -A dead-code
+LLCFLAGS := -mattr=-fast-unaligned-mem,-vector-unaligned-mem
 
 .PHONY: clean
 
@@ -20,9 +23,9 @@ $(BOOTIMG): force
 	make -C boot
 
 hda.img: $(BOOTIMG) $(TARGET).elf
-	dd if=/dev/zero of=padding bs=1 count=$$((1024 - $$(stat -c%s boot/boot)))
-	cat $(BOOTIMG) padding > bootsects
-	cat bootsects $(TARGET).elf > $@
+	dd if=/dev/zero of=padding.bin bs=1 count=$$((1024 - $$(stat -c%s boot/boot.bin)))
+	cat $(BOOTIMG) padding.bin > bootsects.bin
+	cat bootsects.bin $(TARGET).elf > $@
 
 rust:
 	git submodule add https://github.com/mozilla/rust rust
@@ -33,12 +36,19 @@ libcore.rlib: rust
 %.o: %.S
 	gcc -c -o $@ $<
 
-%.o: %.rs
-	$(RUSTC) --crate-type=lib --emit=obj -o $@ $<
-	#$(RUSTC) -o $@ $<
+%.o: %.s
+	gcc -c -o $@ $<
+
+%.ll: %.rs
+	$(RUSTC) $(RUSTFLAGS) --crate-type=lib --emit=ir -o $@ $<
+	sed -i 's/ dereferenceable([0-9]\+)//g' $@
+	sed -i 's/\(CONT_MASK.* = \)available_externally/\1internal/g' $@
+
+%.s: %.ll
+	llc $(LLCFLAGS) -o $@ $<
 
 $(TARGET).elf: link.ld $(OBJS)
-	 $(LD) -n -o $@ -T $^ "-(" libcore.rlib "-)"
+	 $(LD) -n -o $@ -T $^
 
 bootup: $(BOOTIMG)
 	$(QEMU) -d int,cpu_reset -monitor stdio -hda hda.img
@@ -54,4 +64,6 @@ clean:
 	rm -rf *.elf
 	rm -rf *.o
 	rm -rf *.bin
+	rm -rf *.s
+	rm -rf *.ll
 	make -C boot clean
