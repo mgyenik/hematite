@@ -43,38 +43,6 @@ outw(int port, uint16_t data)
     __asm __volatile("outw %0,%w1" : : "a" (data), "d" (port));
 }
 
-/* Primitive debugging method */
-void printx(char *mem, int len, int line)
-{
-    int i;
-    volatile unsigned short *vga_mem;
-
-    vga_mem = (volatile unsigned short *)0xB8000;
-    vga_mem += 80*line;
-
-    for (i = 0; i < len; i++) {
-        unsigned char hex;
-
-        /* First nibble */
-        hex = (mem[i] >> 4) & 0xf;
-        if (hex < 10)
-            hex += 0x30;
-        else
-            hex += 55;
-
-        *vga_mem++ = 0x0200 | (unsigned short)hex;
-
-        /* Second nibble */
-        hex = mem[i] & 0xf;
-        if (hex < 10)
-            hex += 0x30;
-        else
-            hex += 55;
-
-        *vga_mem++ = 0x0200 | (unsigned short)hex;
-    }
-}
-
 void memset(void *p, uint8_t value, uint32_t size) {
     uint8_t *end = (uint8_t *) ((uintptr_t) p + size);
 
@@ -92,12 +60,10 @@ bootmain(void)
     int i = 2;
 
 	// read 1st page off disk
-    printx(&c, 1, 0);
 	readseg((uint64_t) ELFHDR, SECTSIZE*8, 0, 1);
 
 	// is this a valid ELF?
 	if (ELFHDR->e_magic != ELF_MAGIC) {
-        printx(&ELFHDR->e_magic, 4, 1);
 		goto bad;
     }
 
@@ -133,8 +99,6 @@ readseg(uint64_t pa, uint64_t count, uint64_t offset, int line)
 	uint64_t end_pa;
     uint32_t disk_offset;
 
-    printx(&pa, 8, line);
-
 	end_pa = pa + count;
 	
 	// round down to sector boundary
@@ -144,7 +108,6 @@ readseg(uint64_t pa, uint64_t count, uint64_t offset, int line)
 	disk_offset = (offset / SECTSIZE) + 2;
     //printx(&disk_offset, 4, line+1);
     pa -= offset;
-    printx(&pa, 8, line+1);
 
 	// If this is too slow, we could read lots of sectors at a time.
 	// We'd write more to memory than asked, but it doesn't matter --

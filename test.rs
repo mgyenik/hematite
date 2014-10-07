@@ -1,24 +1,26 @@
 #![no_std]
-#![feature(globs)]
+#![feature(globs, phase)]
 #![feature(lang_items)]
 #![no_split_stack]
 
+#[phase(plugin, link)]
 extern crate core;
 
 use core::prelude::*;
 
 mod vga;
-
-pub fn write(s: &str) {
-    for c in s.chars() {
-        vga::putc(c);
-    }
-}
+mod e820;
 
 #[start]
 #[no_mangle]
 pub fn start(_: int, _: *const *const u8) -> int {
-    vga::clear_screen();
-    write("Hello from rust!");
+    let mut console = vga::Console::new(vga::White, vga::DarkGray);
+    let e820 = &mut e820::E820Info::new();
+
+    console.clear();
+    for region in e820 {
+        console.puts("A");
+    }
+
     loop {};
 }
